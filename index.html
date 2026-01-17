@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Data - Topic Modelling</title>
+    <meta name="description" content="Securely upload your CSV or Excel files for topic modelling.">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="upload-card">
+            <h1 class="title">Upload Dataset</h1>
+            <p class="subtitle">Import your data for analysis (CSV, XLSX)</p>
+
+            <div class="drop-zone" id="dropZone">
+                <div class="icon-container">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                </div>
+
+                <p class="drop-text">Drag & drop files or <button id="browseBtn" class="browse-btn">Browse</button></p>
+                <p class="file-info">Supported formats: CSV, XLSX, XLS</p>
+
+                <input type="file" id="fileInput" accept=".csv, .xlsx, .xls" multiple>
+            </div>
+
+            <div id="fileList" class="file-list"></div>
+
+            <div class="actions" style="margin-top: 2rem;">
+                <button id="analyzeBtn" class="analyze-btn" disabled>Analyze Data</button>
+            </div>
+            <div id="statusMessage" class="status-message"></div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
