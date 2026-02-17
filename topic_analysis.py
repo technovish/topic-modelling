@@ -26,6 +26,7 @@ try:
 except LookupError:
     nltk.download('stopwords')
 
+#Preprocess the comments
 def preprocess_text(text):
     # Convert text to lowercase
     text = str(text).lower()
@@ -47,6 +48,7 @@ def preprocess_text(text):
 
     return text
 
+#Gemini API Key
 api_key = 'AIzaSyBvboVCu8QEV8lmfIUz6TrMU6YILeVtarg'
 client = genai.Client(api_key=api_key) if api_key else None
 
@@ -59,8 +61,8 @@ def identify_topic_gemini(comment):
 
     try:
         # Construct a prompt for topic identification, asking for concise topics
-        prompt = f"Provide a concise main topic (1-3 words) or category for the following customer feedback comment:\nComment: {comment}\n\nTopic:"
-
+        prompt2 = f"Provide a concise main topic (1-3 words) or category for the following customer feedback comment:\nComment: {comment}\n\nTopic:"
+        prompt = f"System Role: You are an expert Customer Feedback Analyst. Your goal is to analyze user comments and accurately categorize them into only one of five specific categories based on the primary intent of the message.\nCategories & Definitions:\nProduct Quality: Issues or praise regarding the physical item, software features, durability, or performance.\nService Quality: Feedback regarding company policies, shipping speed, website usability, or overall brand experience.\nAgent: Specific mentions of interactions with customer support staff, chat agents, or sales representatives (e.g., helpfulness, politeness, or lack thereof).\nPrice: Comments regarding the cost, value for money, subscription fees, or discounts.\nOthers: Any comment that does not fit the above categories or is too vague to classify.\nTask: Analyse the following comment. Do not create a new category on your own.\nComment: {comment}\n\nCategory:"
         # Generate content using the Gemini model
         response = client.models.generate_content(
             model="models/gemini-2.5-flash",
@@ -80,7 +82,7 @@ def identify_topic_gemini(comment):
 
     except Exception as e:
         # Log the error and return a default value
-        print(f"Error processing comment '{comment[:50]}...': {e}")
+        print(f"Error processing comment '{comment[:900]}...': {e}")
         return "Error Identifying Topic"
 
 def analyze_file(file_path):
@@ -117,11 +119,12 @@ def analyze_file(file_path):
         else:
              print("Could not identify a text column for analysis.")
              return None
-
+    data = data[data[target_col] != 'Na']
+    data = data[data[target_col] != 'N/a']
     comments = data[target_col].dropna().astype(str)
     
     # Optional: limit for testing
-    comments = comments[:100] 
+    #comments = comments[:500]
 
     print("Preprocessing function 'preprocess_text' defined.")
     comments = comments.apply(preprocess_text)
@@ -149,7 +152,8 @@ def analyze_file(file_path):
     print("\nSample of comments with identified topics:")
     print(data[[target_col, 'identified_topic']].head())
 
-    
+    file_name = 'new_file.xlsx'
+    data.to_excel(file_name, index=False)
     # Calculate the value counts for each identified topic
     topic_counts = data['identified_topic'].value_counts()
 
