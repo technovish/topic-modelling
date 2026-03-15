@@ -48,8 +48,14 @@ def preprocess_text(text):
 
     return text
 
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
 #Gemini API Key
-api_key = 'AIzaSyBvboVCu8QEV8lmfIUz6TrMU6YILeVtarg'
+api_key = os.environ.get("GEMINI_API_KEY")
 client = genai.Client(api_key=api_key) if api_key else None
 
 def identify_topic_gemini(comment):
@@ -69,6 +75,7 @@ def identify_topic_gemini(comment):
             contents=[prompt],
             config = types.GenerateContentConfig(
               max_output_tokens=50,  # Increased token limit for more descriptive topics
+              
           )
         )
         # Extract the text from the response, handling cases where it might be empty
