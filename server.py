@@ -1,6 +1,22 @@
 from flask import Flask, request, jsonify, send_from_directory, session, redirect, url_for
 import os
 import topic_analysis
+import sqlite3
+from werkzeug.security import check_password_hash
+from dotenv import load_dotenv
+
+load_dotenv()
+
+DB_NAME = os.getenv('DB_NAME', 'analytics_portal.db')
+
+def get_db_connection():
+    try:
+        conn = sqlite3.connect(DB_NAME)
+        conn.row_factory = sqlite3.Row
+        return conn
+    except sqlite3.Error as err:
+        print(f"Error connecting to SQLite: {err}")
+        return None
 
 app = Flask(__name__, static_folder='.')
 
@@ -16,11 +32,28 @@ def login():
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
-        if email=="user@intellize.com" and password=="intellize":
-            session['user'] = email
-            return redirect(url_for('index'))
-        else:
-            return "Invalid credentials", 401
+        
+        conn = get_db_connection()
+        if not conn:
+            return "Database connection error. Please try again later.", 500
+            
+        try:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
+            user = cursor.fetchone()
+            
+            if user and check_password_hash(user['password_hash'], password):
+                session['user'] = email
+                return redirect(url_for('index'))
+            else:
+                return send_from_directory('.', 'invalid.html'), 401
+        except sqlite3.Error as err:
+            print(f"Database error during login: {err}")
+            return "An internal database error occurred.", 500
+        finally:
+            if 'conn' in locals() and conn:
+                conn.close()
+                
     return send_from_directory('.', 'login.html')
 
 @app.route('/logout')
