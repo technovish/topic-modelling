@@ -58,6 +58,7 @@ load_dotenv()
 api_key = os.environ.get("GEMINI_API_KEY") # Get API key from environment variable
 client = genai.Client(api_key=api_key) if api_key else None
 
+
 def identify_topic_gemini(comment):
     if not comment or comment.isspace():
         return "No Topic (Empty Comment)"
@@ -90,7 +91,7 @@ def identify_topic_gemini(comment):
     except Exception as e:
         # Log the error and return a default value
         print(f"Error processing comment '{comment[:900]}...': {e}")
-        return "Error Identifying Topic"
+        return "Service Issue"
 
 def analyze_file(file_path):
     print(f"Analyzing file: {file_path}")
