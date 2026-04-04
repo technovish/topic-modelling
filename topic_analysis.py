@@ -55,9 +55,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 #Gemini API Key
-
-api_key = "AIzaSyBvboVCu8QEV8lmfIUz6" # Get API key from environment variable
+api_key = os.environ.get("GEMINI_API_KEY") # Get API key from environment variable
 client = genai.Client(api_key=api_key) if api_key else None
+
 
 def identify_topic_gemini(comment):
     if not comment or comment.isspace():
