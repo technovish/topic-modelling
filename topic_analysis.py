@@ -87,7 +87,7 @@ def analyze_file(file_path='data/tmo_comments.xlsx'):
     
 
     #New File Generation
-    file_name = 'sentiment_analysis.xlsx'
+    file_name = 'generated_files/sentiment_analysis.xlsx'
     df.to_excel(file_name, index=False)
     # Calculate the value counts for each identified topic
     sentiment_counts = df['Sentiment'].value_counts()
@@ -102,7 +102,7 @@ def analyze_file(file_path='data/tmo_comments.xlsx'):
     plt.tight_layout()
     
     # Save the plot
-    chart_path = 'sentiment_chart.png'
+    chart_path = 'charts/sentiment_chart.png'
     if os.path.exists(chart_path):
         os.remove(chart_path)
     plt.savefig(chart_path)
