@@ -1,21 +1,30 @@
 from flask import Flask, request, jsonify, send_from_directory, session, redirect, url_for
 import os
 import topic_analysis
-import sqlite3
+import mysql.connector
 from werkzeug.security import check_password_hash
 from dotenv import load_dotenv
 
 load_dotenv()
 
-DB_NAME = os.getenv('DB_NAME', 'analytics_portal.db')
+DB_HOST = os.getenv('DB_HOST', 'localhost')
+DB_USER = os.getenv('DB_USER', 'root')
+DB_PASSWORD = os.getenv('DB_PASSWORD', '')
+DB_NAME = os.getenv('DB_NAME', 'comments.db')
+DB_PORT = os.getenv('DB_PORT', '3306')
 
 def get_db_connection():
     try:
-        conn = sqlite3.connect(DB_NAME)
-        conn.row_factory = sqlite3.Row
+        conn = mysql.connector.connect(
+            host=DB_HOST,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            database=DB_NAME,
+            port=int(DB_PORT)
+        )
         return conn
-    except sqlite3.Error as err:
-        print(f"Error connecting to SQLite: {err}")
+    except mysql.connector.Error as err:
+        print(f"Error connecting to MySQL: {err}")
         return None
 
 app = Flask(__name__, static_folder='.')
@@ -38,8 +47,8 @@ def login():
             return "Database connection error. Please try again later.", 500
             
         try:
-            cursor = conn.cursor()
-            cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
+            cursor = conn.cursor(dictionary=True)
+            cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
             user = cursor.fetchone()
             
             if user and check_password_hash(user['password_hash'], password):
@@ -47,7 +56,7 @@ def login():
                 return redirect(url_for('index'))
             else:
                 return send_from_directory('.', 'invalid.html'), 401
-        except sqlite3.Error as err:
+        except mysql.connector.Error as err:
             print(f"Database error during login: {err}")
             return "An internal database error occurred.", 500
         finally:

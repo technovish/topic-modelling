@@ -78,8 +78,10 @@ def analyze_file(file_path='data/tmo_comments.xlsx'):
 
     # Add sentiments to the DataFrame
     df['Sentiment'] = sentiments
+
     print("\nSentiment analysis complete. Displaying first 10 comments with their sentiment:")
     print(df[['Comments', 'Sentiment']].head(10))
+
     print("\nSentiment distribution:")
     print(df['Sentiment'].value_counts())
     
