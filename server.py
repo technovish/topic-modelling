@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify, send_from_directory, session, redirec
 import os
 import topic_analysis
 import mysql.connector
-from werkzeug.security import check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -35,6 +35,58 @@ if not os.path.exists(UPLOAD_FOLDER):
 
 app.secret_key = 'super_secret_key_for_this_demo_only_change_in_production'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        email = request.form.get('email')
+        password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
+        
+        if not email or not password or not confirm_password:
+            return "All fields are required.", 400
+            
+        if password != confirm_password:
+            return "Passwords do not match.", 400
+            
+        if len(password) < 6:
+            return "Password must be at least 6 characters long.", 400
+            
+        import re
+        email_regex = r'^[\w\.-]+@[\w\.-]+\.\w+$'
+        if not re.match(email_regex, email):
+            return "Invalid email address format.", 400
+            
+        conn = get_db_connection()
+        if not conn:
+            return "Database connection error. Please try again later.", 500
+            
+        try:
+            cursor = conn.cursor(dictionary=True)
+            
+            # Check if user already exists
+            cursor.execute("SELECT id FROM users WHERE email = %s", (email,))
+            if cursor.fetchone():
+                return "A user with this email already exists.", 409
+                
+            # Create new user
+            hashed_pw = generate_password_hash(password)
+            cursor.execute(
+                "INSERT INTO users (email, password_hash) VALUES (%s, %s)",
+                (email, hashed_pw)
+            )
+            conn.commit()
+            
+            return redirect(url_for('login', registered='true'))
+            
+        except mysql.connector.Error as err:
+            print(f"Database error during registration: {err}")
+            return "An internal database error occurred.", 500
+        finally:
+            if 'conn' in locals() and conn:
+                conn.close()
+                
+    return send_from_directory('.', 'register.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():

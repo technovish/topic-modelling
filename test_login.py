@@ -77,5 +77,85 @@ class TestLogin(unittest.TestCase):
         self.assertEqual(response.status_code, 500)
         self.assertIn("Database connection error", response.data.decode())
 
+    @patch('server.get_db_connection')
+    def test_register_get(self, mock_get_db):
+        response = self.client.get('/register')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Create an Account", response.data.decode())
+
+    @patch('server.get_db_connection')
+    def test_register_success(self, mock_get_db):
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_get_db.return_value = mock_conn
+        mock_conn.cursor.return_value = mock_cursor
+        
+        # User does not exist yet (fetchone returns None)
+        mock_cursor.fetchone.return_value = None
+        
+        response = self.client.post('/register', data={
+            'email': 'newuser@intellize.com',
+            'password': 'password123',
+            'confirm_password': 'password123'
+        })
+        
+        # Check redirect (302) to login page with registered query param
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response.location.endswith('/login?registered=true'))
+        mock_cursor.execute.assert_any_call("SELECT id FROM users WHERE email = %s", ('newuser@intellize.com',))
+        mock_conn.commit.assert_called_once()
+
+    @patch('server.get_db_connection')
+    def test_register_duplicate_email(self, mock_get_db):
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_get_db.return_value = mock_conn
+        mock_conn.cursor.return_value = mock_cursor
+        
+        # User already exists
+        mock_cursor.fetchone.return_value = {'id': 1}
+        
+        response = self.client.post('/register', data={
+            'email': 'existing@intellize.com',
+            'password': 'password123',
+            'confirm_password': 'password123'
+        })
+        
+        self.assertEqual(response.status_code, 409)
+        self.assertIn("A user with this email already exists", response.data.decode())
+
+    @patch('server.get_db_connection')
+    def test_register_passwords_mismatch(self, mock_get_db):
+        response = self.client.post('/register', data={
+            'email': 'newuser@intellize.com',
+            'password': 'password123',
+            'confirm_password': 'differentpassword'
+        })
+        
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Passwords do not match", response.data.decode())
+
+    @patch('server.get_db_connection')
+    def test_register_password_too_short(self, mock_get_db):
+        response = self.client.post('/register', data={
+            'email': 'newuser@intellize.com',
+            'password': '12345',
+            'confirm_password': '12345'
+        })
+        
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Password must be at least 6 characters long", response.data.decode())
+
+    @patch('server.get_db_connection')
+    def test_register_invalid_email(self, mock_get_db):
+        response = self.client.post('/register', data={
+            'email': 'invalid-email',
+            'password': 'password123',
+            'confirm_password': 'password123'
+        })
+        
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Invalid email address format", response.data.decode())
+
 if __name__ == '__main__':
     unittest.main()
