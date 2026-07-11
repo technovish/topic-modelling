@@ -6,3 +6,7 @@ openpyxl
 python-dotenv
 matplotlib
 mysql-connector-python
+transformers
+fastapi
+gunicorn
+torch
