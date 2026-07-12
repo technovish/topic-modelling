@@ -97,6 +97,17 @@ Alternatively, you can build and run the application inside a Docker container:
    docker run -p 5001:5001 --env-file .env topic-modelling
    ```
 
+## Deploying to Google App Engine (GAE)
+
+To deploy the application to Google App Engine Flexible (Custom Runtime):
+
+1. Ensure you have the [Google Cloud CLI (gcloud)](https://cloud.google.com/sdk/gcloud) installed and configured.
+2. Edit the [app.yaml](file:///Users/technovish/Personal/Repos/topic-modelling/app.yaml) file to fill in your `GEMINI_API_KEY` and MySQL database configuration in the `env_variables` section.
+3. Deploy the application:
+   ```bash
+   gcloud app deploy
+   ```
+
 ## Project Structure
 - `server.py`: Main Flask application that handles authentication routes, session management, and file uploads.
 - `setup_db.py`: Database initialization script creating the `users` table and creating the default seed user.
@@ -108,6 +119,7 @@ Alternatively, you can build and run the application inside a Docker container:
 - `results.html`: Web page to display the results of the analysis.
 - `script.js` & `style.css`: Frontend interactivity, styling, and visual transitions.
 - `test_login.py` & `test_upload.py`: Test suites checking authorization logic, login/signup API endpoint behaviors, and upload flows.
+- `app.yaml`: Google App Engine deployment configuration.
 - `requirements.txt`: List of required Python packages (`flask`, `pandas`, `google-genai`, `nltk`, `openpyxl`, `mysql-connector-python`, `werkzeug`).
 
 ## Notes on Data Format

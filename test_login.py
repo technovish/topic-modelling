@@ -157,5 +157,20 @@ class TestLogin(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertIn("Invalid email address format", response.data.decode())
 
+    @patch('server.mysql.connector.connect')
+    def test_get_db_connection_unix_socket(self, mock_connect):
+        import server
+        server.DB_SOCKET = '/cloudsql/test-instance'
+        try:
+            server.get_db_connection()
+            mock_connect.assert_called_once_with(
+                unix_socket='/cloudsql/test-instance',
+                user=server.DB_USER,
+                password=server.DB_PASSWORD,
+                database=server.DB_NAME
+            )
+        finally:
+            server.DB_SOCKET = None
+
 if __name__ == '__main__':
     unittest.main()

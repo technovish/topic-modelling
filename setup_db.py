@@ -11,17 +11,27 @@ DB_USER = os.getenv('DB_USER', 'root')
 DB_PASSWORD = os.getenv('DB_PASSWORD', '')
 DB_NAME = os.getenv('DB_NAME', 'comments.db')
 DB_PORT = os.getenv('DB_PORT', '3306')
+DB_SOCKET = os.getenv('DB_SOCKET')
 
 def setup_database():
     try:
-        print(f"Connecting to MySQL database '{DB_NAME}' at {DB_HOST}:{DB_PORT}...")
-        conn = mysql.connector.connect(
-            host=DB_HOST,
-            user=DB_USER,
-            password=DB_PASSWORD,
-            database=DB_NAME,
-            port=int(DB_PORT)
-        )
+        if DB_SOCKET:
+            print(f"Connecting to MySQL database '{DB_NAME}' via unix socket at {DB_SOCKET}...")
+            conn = mysql.connector.connect(
+                unix_socket=DB_SOCKET,
+                user=DB_USER,
+                password=DB_PASSWORD,
+                database=DB_NAME
+            )
+        else:
+            print(f"Connecting to MySQL database '{DB_NAME}' at {DB_HOST}:{DB_PORT}...")
+            conn = mysql.connector.connect(
+                host=DB_HOST,
+                user=DB_USER,
+                password=DB_PASSWORD,
+                database=DB_NAME,
+                port=int(DB_PORT)
+            )
         cursor = conn.cursor()
         
         # Create users table with MySQL compatible syntax
