@@ -3,6 +3,7 @@
 This is a web application that allows users to upload customer feedback data (in Excel or CSV format) and automatically categorizes each comment into specific topics using Google's Gemini API. 
 
 ## Features
+- **User Authentication & Registration:** Secure user sign-up and sign-in pages utilizing hashed passwords and session management.
 - **File Upload:** Upload `.xlsx`, `.xls`, or `.csv` files containing customer feedback.
 - **Automated Topic Classification:** Uses the Gemini 2.5 Flash model to categorize feedback into one of five main categories:
   - Product Quality
@@ -17,7 +18,9 @@ This is a web application that allows users to upload customer feedback data (in
 ## Tech Stack
 - **Backend:** Python, Flask
 - **Frontend:** HTML, CSS, JavaScript
+- **Database:** MySQL
 - **AI/ML:** Google GenAI SDK (`gemini-2.5-flash`), NLTK
+- **Security:** Werkzeug (for password hashing and verification)
 - **Data Manipulation:** Pandas
 - **Visualization:** Matplotlib
 
@@ -40,14 +43,24 @@ This is a web application that allows users to upload customer feedback data (in
    pip install -r requirements.txt
    ```
 
-4. **Set up Gemini API Key:**
-   - The application relies on the Gemini API.
+4. **Set up Environment Variables:**
    - Create a file named `.env` in the root of your project directory based on `.env.example`.
-   - Add your Gemini API key to the `.env` file like this:
+   - Add your Gemini API key and MySQL Database connection configuration to the `.env` file like this:
      ```env
      GEMINI_API_KEY=your_actual_api_key_here
+     DB_HOST=localhost
+     DB_USER=root
+     DB_PASSWORD=your_password
+     DB_NAME=comments
+     DB_PORT=3306
      ```
-   - The application will automatically load this key when run.
+
+5. **Initialize Database:**
+   - Run the database setup script to create the user tables and seed a default user:
+     ```bash
+     python setup_db.py
+     ```
+     *Note: This generates a default user with Email: `user@intellize.com`, Password: `intellize`.*
 
 ## Usage
 
@@ -59,16 +72,43 @@ This is a web application that allows users to upload customer feedback data (in
 
 2. **Access the application:**
    - Open your web browser and navigate to `http://127.0.0.1:5001`.
-   - Use the web interface to upload your feedback data file.
+   - You will be redirected to the sign-in page. Log in with the default credentials or click "Sign Up" to register a new account.
+   - Use the main portal interface to upload your feedback data file.
    - Wait for the analysis to complete. Once finished, you will be able to view the results chart and download the processed dataset.
 
+3. **Running Tests:**
+   - Run the unit tests to verify the authentication and file upload logic:
+     ```bash
+     python -m unittest test_login.py
+     python -m unittest test_upload.py
+     ```
+
+## Running with Docker
+
+Alternatively, you can build and run the application inside a Docker container:
+
+1. **Build the Docker image:**
+   ```bash
+   docker build -t topic-modelling .
+   ```
+
+2. **Run the container:**
+   ```bash
+   docker run -p 5001:5001 --env-file .env topic-modelling
+   ```
+
 ## Project Structure
-- `server.py`: Main Flask application that handles routing and file uploads.
+- `server.py`: Main Flask application that handles authentication routes, session management, and file uploads.
+- `setup_db.py`: Database initialization script creating the `users` table and creating the default seed user.
 - `topic_analysis.py`: Core script handling text preprocessing, communication with the Gemini API, topic classification, and chart generation.
-- `index.html`: The primary web interface for file uploads.
+- `index.html`: The primary web interface for file uploads (requires active session).
+- `login.html`: Secure Sign In interface.
+- `register.html`: Secure Create Account interface.
+- `invalid.html`: Validation failure page for invalid login.
 - `results.html`: Web page to display the results of the analysis.
-- `script.js` & `style.css`: Frontend interactivity and styling.
-- `requirements.txt`: List of required Python packages (`flask`, `pandas`, `google-genai`, `nltk`, `openpyxl`).
+- `script.js` & `style.css`: Frontend interactivity, styling, and visual transitions.
+- `test_login.py` & `test_upload.py`: Test suites checking authorization logic, login/signup API endpoint behaviors, and upload flows.
+- `requirements.txt`: List of required Python packages (`flask`, `pandas`, `google-genai`, `nltk`, `openpyxl`, `mysql-connector-python`, `werkzeug`).
 
 ## Notes on Data Format
 The application expects the uploaded Excel or CSV file to have a text column to analyze. Ideally, this column should be named `Customer Feedback Filtered`. If not found, the script tries to locate any column with "feedback" or "comment" in its header.
