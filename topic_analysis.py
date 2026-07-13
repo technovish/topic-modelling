@@ -9,27 +9,57 @@ import matplotlib
 matplotlib.use('Agg') # Set non-interactive backend
 import matplotlib.pyplot as plt
 from transformers import pipeline
+import tempfile
+from google.cloud import storage
 
 
 
 
 def analyze_file(file_path='data/tmo_comments.xlsx'):
     print(f"Analyzing file: {file_path}")
-    if not os.path.exists(file_path):
-        print(f"File not found: {file_path}")
-        return None
+    
+    gcs_bucket_name = os.getenv('GCS_BUCKET_NAME')
+    temp_local_path = None
+    
+    if gcs_bucket_name:
+        try:
+            print(f"Fetching file '{file_path}' from GCS bucket '{gcs_bucket_name}'...")
+            storage_client = storage.Client()
+            bucket = storage_client.bucket(gcs_bucket_name)
+            blob = bucket.blob(file_path)
+            
+            temp_dir = tempfile.gettempdir()
+            temp_local_path = os.path.join(temp_dir, os.path.basename(file_path))
+            blob.download_to_filename(temp_local_path)
+            read_path = temp_local_path
+            print(f"Downloaded GCS file to temporary path: {read_path}")
+        except Exception as e:
+            print(f"Error fetching file from GCS: {e}")
+            return None
+    else:
+        read_path = file_path
+        if not os.path.exists(read_path):
+            print(f"File not found: {read_path}")
+            return None
 
     try:
-        if file_path.endswith('.xlsx') or file_path.endswith('.xls'):
-            data = pd.read_excel(file_path)
-        elif file_path.endswith('.csv'):
-            data = pd.read_csv(file_path)
+        if read_path.endswith('.xlsx') or read_path.endswith('.xls'):
+            data = pd.read_excel(read_path)
+        elif read_path.endswith('.csv'):
+            data = pd.read_csv(read_path)
         else:
             print("Unsupported file format.")
             return None
     except Exception as e:
         print(f"Error reading file: {e}")
         return None
+    finally:
+        if temp_local_path and os.path.exists(temp_local_path):
+            try:
+                os.remove(temp_local_path)
+                print(f"Cleaned up temporary path: {temp_local_path}")
+            except Exception as cleanup_err:
+                print(f"Error cleaning up temp file {temp_local_path}: {cleanup_err}")
 
 
     # Extract comments, drop NaN values, convert to string, and flatten the list of lists

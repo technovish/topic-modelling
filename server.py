@@ -4,6 +4,7 @@ import topic_analysis
 import mysql.connector
 from werkzeug.security import check_password_hash, generate_password_hash
 from dotenv import load_dotenv
+from google.cloud import storage
 
 load_dotenv()
 
@@ -168,24 +169,43 @@ def upload_file():
     
     if file:
         filename = file.filename
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(filepath)
+        gcs_bucket_name = os.getenv('GCS_BUCKET_NAME')
+        result_df = None
         
-        # Trigger topic analysis
-        try:
-            # We are running this synchronously for now. 
-            # For large files, this should be a background task (e.g., Celery/Redis Queue).
-            result_df = topic_analysis.analyze_file(filepath)
+        if gcs_bucket_name:
+            try:
+                print(f"Uploading file '{filename}' to GCS bucket '{gcs_bucket_name}'...")
+                storage_client = storage.Client()
+                bucket = storage_client.bucket(gcs_bucket_name)
+                blob = bucket.blob(filename)
+                
+                # Upload the file directly from the stream
+                file.seek(0)
+                blob.upload_from_file(file)
+                
+                # Now trigger analysis on the uploaded GCS file reference (just pass the filename/key)
+                result_df = topic_analysis.analyze_file(filename)
+                
+            except Exception as e:
+                print(f"Error during GCS upload or analysis: {e}")
+                return jsonify({'message': 'GCS upload or analysis failed', 'error': str(e)}), 500
+        else:
+            # Fallback to local directory upload for testing/development
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(filepath)
             
-            if result_df is not None:
-                rows_count = len(result_df)
-                return jsonify({'message': 'File uploaded and analyzed successfully', 'rows': rows_count}), 200
-            else:
-                 return jsonify({'message': 'File uploaded but analysis failed', 'rows': 0}), 500
-
-        except Exception as e:
-            print(f"Error during analysis: {e}")
-            return jsonify({'message': 'File uploaded but error during analysis', 'error': str(e)}), 500
+            # Trigger topic analysis locally
+            try:
+                result_df = topic_analysis.analyze_file(filepath)
+            except Exception as e:
+                print(f"Error during local analysis: {e}")
+                return jsonify({'message': 'File uploaded locally but error during analysis', 'error': str(e)}), 500
+                
+        if result_df is not None:
+            rows_count = len(result_df)
+            return jsonify({'message': 'File uploaded and analyzed successfully', 'rows': rows_count}), 200
+        else:
+            return jsonify({'message': 'File uploaded but analysis failed', 'rows': 0}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, port=5001)

@@ -10,3 +10,4 @@ transformers
 fastapi
 gunicorn
 torch
+google-cloud-storage
