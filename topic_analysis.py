@@ -15,7 +15,7 @@ from google.cloud import storage
 
 
 
-def analyze_file(file_path='data/tmo_comments.xlsx'):
+def analyze_file(file_path):
     print(f"Analyzing file: {file_path}")
     
     gcs_bucket_name = os.getenv('GCS_BUCKET_NAME')
@@ -143,6 +143,24 @@ def analyze_file(file_path='data/tmo_comments.xlsx'):
 if __name__ == "__main__":
     # Default behavior if run directly
     default_path = 'data/tmo_comments.xlsx'
+    gcs_bucket_name = os.getenv('GCS_BUCKET_NAME')
+    
+    if gcs_bucket_name:
+        try:
+            print(f"Checking GCS bucket '{gcs_bucket_name}' for latest uploaded file...")
+            storage_client = storage.Client()
+            bucket = storage_client.bucket(gcs_bucket_name)
+            blobs = list(storage_client.list_blobs(bucket))
+            if blobs:
+                # Sort blobs to find the newest updated/created file
+                blobs.sort(key=lambda x: x.updated or x.time_created, reverse=True)
+                default_path = blobs[0].name
+                print(f"Using latest uploaded GCS file: {default_path}")
+            else:
+                print("GCS bucket is empty. Falling back to local default path.")
+        except Exception as e:
+            print(f"Error checking GCS bucket: {e}. Falling back to local default path.")
+            
     # Check absolute path mostly for local dev environment consistency
     base_dir = os.path.dirname(os.path.abspath(__file__))
     full_path = os.path.join(base_dir, default_path)
