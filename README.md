@@ -1,25 +1,27 @@
-# Topic Modelling Application
+# Topic Sentiment Analysis Application
 
-This is a web application that allows users to upload customer feedback data (in Excel or CSV format) and automatically categorizes each comment into specific topics using Google's Gemini API. 
+This is a web application that allows users to upload customer feedback data (in Excel or CSV format) and automatically analyzes each comment to categorize its sentiment using a pre-trained Hugging Face transformer model.
 
 ## Features
 - **User Authentication & Registration:** Secure user sign-up and sign-in pages utilizing hashed passwords and session management.
 - **File Upload:** Upload `.xlsx`, `.xls`, or `.csv` files containing customer feedback.
-- **Automated Topic Classification:** Uses the Gemini 2.5 Flash model to categorize feedback into one of five main categories:
-  - Product Quality
-  - Service Quality
-  - Agent
-  - Price
-  - Others
-- **Data Preprocessing:** Cleans and processes the text using `nltk` to remove stop words, punctuation, and numbers.
-- **Analytics & Visualization:** Generates a bar chart (`chart.png`) showing the distribution of identified topics.
-- **Data Export:** Outputs a new Excel file (`new_file.xlsx`) containing the original comments alongside their newly identified topics.
+- **Automated Sentiment Analysis:** Uses the Hugging Face `distilbert-base-uncased-finetuned-sst-2-english` model to categorize feedback into one of five sentiment categories:
+  - `STRONG_POSITIVE`
+  - `POSITIVE`
+  - `NEUTRAL`
+  - `NEGATIVE`
+  - `STRONG_NEGATIVE`
+- **Google Cloud Storage (GCS) Integration:** Optional GCS integration to upload and fetch files directly from a bucket, with a local filesystem fallback for development.
+- **Dynamic GCS File Processing:** Standalone execution of the analysis script dynamically checks GCS for the most recently uploaded file when a bucket is configured.
+- **Analytics & Visualization:** Generates a bar chart (`charts/sentiment_chart.png`) showing the distribution of sentiments.
+- **Data Export:** Outputs a new Excel file (`generated_files/sentiment_analysis.xlsx`) containing the original comments alongside their analyzed sentiments.
 
 ## Tech Stack
 - **Backend:** Python, Flask
 - **Frontend:** HTML, CSS, JavaScript
 - **Database:** MySQL
-- **AI/ML:** Google GenAI SDK (`gemini-2.5-flash`), NLTK
+- **AI/ML:** Hugging Face Transformers (`distilbert-base-uncased-sst-2`), PyTorch, NLTK
+- **Cloud:** Google Cloud Storage (GCS) SDK, Google App Engine (GAE)
 - **Security:** Werkzeug (for password hashing and verification)
 - **Data Manipulation:** Pandas
 - **Visualization:** Matplotlib
@@ -45,9 +47,11 @@ This is a web application that allows users to upload customer feedback data (in
 
 4. **Set up Environment Variables:**
    - Create a file named `.env` in the root of your project directory based on `.env.example`.
-   - Add your Gemini API key and MySQL Database connection configuration to the `.env` file like this:
+   - Add your environment configuration details to the `.env` file like this:
      ```env
      GEMINI_API_KEY=your_actual_api_key_here
+     
+     # Database Configuration
      DB_HOST=localhost
      DB_USER=root
      DB_PASSWORD=your_password
@@ -56,6 +60,9 @@ This is a web application that allows users to upload customer feedback data (in
      
      # Optional: Unix socket connection path (uncomment to override host/port TCP connection)
      # DB_SOCKET=/cloudsql/project-id:region:instance-id
+     
+     # Optional: Google Cloud Storage bucket name for file storage
+     GCS_BUCKET_NAME=your-gcs-bucket-name
      ```
 
 5. **Initialize Database:**
@@ -79,7 +86,14 @@ This is a web application that allows users to upload customer feedback data (in
    - Use the main portal interface to upload your feedback data file.
    - Wait for the analysis to complete. Once finished, you will be able to view the results chart and download the processed dataset.
 
-3. **Running Tests:**
+3. **Running Standalone Analysis:**
+   - You can also run the analysis script directly via terminal:
+     ```bash
+     python topic_analysis.py [optional_local_file_path]
+     ```
+     If `GCS_BUCKET_NAME` is configured, it will check the bucket for the most recently uploaded file and analyze it.
+
+4. **Running Tests:**
    - Run the unit tests to verify the authentication and file upload logic:
      ```bash
      python -m unittest test_login.py
@@ -105,7 +119,7 @@ Alternatively, you can build and run the application inside a Docker container:
 To deploy the application to Google App Engine Standard (Python 3.9 runtime):
 
 1. Ensure you have the [Google Cloud CLI (gcloud)](https://cloud.google.com/sdk/gcloud) installed and configured.
-2. Edit the [app.yaml](file:///Users/technovish/Personal/Repos/topic-modelling/app.yaml) file to fill in your `GEMINI_API_KEY`, Cloud SQL instance connection string under `beta_settings`, and database credentials (including `DB_SOCKET`) under the `env_variables` section.
+2. Edit the [app.yaml](file:///Users/technovish/Personal/Repos/topic-modelling/app.yaml) file to fill in your environment variables, including `GEMINI_API_KEY`, database credentials (`DB_SOCKET`), and GCS bucket details under the `env_variables` section.
 3. Deploy the application:
    ```bash
    gcloud app deploy
@@ -114,7 +128,7 @@ To deploy the application to Google App Engine Standard (Python 3.9 runtime):
 ## Project Structure
 - `server.py`: Main Flask application that handles authentication routes, session management, and file uploads.
 - `setup_db.py`: Database initialization script creating the `users` table and creating the default seed user.
-- `topic_analysis.py`: Core script handling text preprocessing, communication with the Gemini API, topic classification, and chart generation.
+- `topic_analysis.py`: Core script handling text preprocessing, downloading files from GCS, analyzing sentiment using Hugging Face pipeline, and chart generation.
 - `index.html`: The primary web interface for file uploads (requires active session).
 - `login.html`: Secure Sign In interface.
 - `register.html`: Secure Create Account interface.
@@ -123,7 +137,7 @@ To deploy the application to Google App Engine Standard (Python 3.9 runtime):
 - `script.js` & `style.css`: Frontend interactivity, styling, and visual transitions.
 - `test_login.py` & `test_upload.py`: Test suites checking authorization logic, login/signup API endpoint behaviors, and upload flows.
 - `app.yaml`: Google App Engine deployment configuration.
-- `requirements.txt`: List of required Python packages (`flask`, `pandas`, `google-genai`, `nltk`, `openpyxl`, `mysql-connector-python`, `werkzeug`).
+- `requirements.txt`: List of required Python packages.
 
 ## Notes on Data Format
 The application expects the uploaded Excel or CSV file to have a text column to analyze. Ideally, this column should be named `Customer Feedback Filtered`. If not found, the script tries to locate any column with "feedback" or "comment" in its header.
