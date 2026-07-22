@@ -96,7 +96,7 @@ This is a web application that allows users to upload customer feedback data (in
 4. **Running Tests:**
    - Run the unit tests to verify the authentication and file upload logic:
      ```bash
-     python -m unittest test_login.py
+     python -m unittest login.py
      python -m unittest test_upload.py
      ```
 
@@ -135,7 +135,7 @@ To deploy the application to Google App Engine Standard (Python 3.9 runtime):
 - `invalid.html`: Validation failure page for invalid login.
 - `results.html`: Web page to display the results of the analysis.
 - `script.js` & `style.css`: Frontend interactivity, styling, and visual transitions.
-- `test_login.py` & `test_upload.py`: Test suites checking authorization logic, login/signup API endpoint behaviors, and upload flows.
+- `login.py` & `test_upload.py`: Test suites checking authorization logic, login/signup API endpoint behaviors, and upload flows.
 - `app.yaml`: Google App Engine deployment configuration.
 - `requirements.txt`: List of required Python packages.
 

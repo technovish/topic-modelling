@@ -37,4 +37,4 @@ RUN mkdir -p charts generated_files data
 EXPOSE 5001
 
 # Command to initialize the database and run the server using gunicorn
-CMD ["sh", "-c", "python setup_db.py && gunicorn --workers=2 --bind=0.0.0.0:${PORT:-5001} server:app"]
+CMD ["sh", "-c", "python setup_db.py && gunicorn --workers=2 --timeout 300 --bind=0.0.0.0:${PORT:-5001} server:app"]
