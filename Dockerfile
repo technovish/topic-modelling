@@ -36,5 +36,9 @@ RUN mkdir -p charts generated_files data
 # Expose the Flask port
 EXPOSE 5001
 
+# Increase the timeout to 5 minutes (300 seconds)
+gunicorn --bind :5001 --timeout 300 server:app
+
+
 # Command to initialize the database and run the server using gunicorn
-CMD ["sh", "-c", "python setup_db.py && gunicorn --workers=2 --bind=0.0.0.0:${PORT:-5001} server:app"]
+#CMD ["sh", "-c", "python setup_db.py && gunicorn --workers=2 --timeout 300 --bind=0.0.0.0:${PORT:-5001} server:app"]
