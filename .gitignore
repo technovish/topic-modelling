@@ -11,3 +11,6 @@ __pycache__/
 venv/
 env/
 ENV/
+
+#oython files
+test_conn.py
