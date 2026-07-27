@@ -9,12 +9,3 @@ manual_scaling:
 beta_settings:
   cloud_sql_instances: "YOUR_PROJECT_ID:YOUR_REGION:YOUR_INSTANCE_NAME"
 
-# Environment variables passed to GAE at runtime
-env_variables:
-  GEMINI_API_KEY: "AIzaSyAOfv1k5NWSkQn-IeaHDhqaHAQZEsgGcUQ"
-  DB_USER: "vjoshi"
-  DB_PASSWORD: "Joshi@1911"
-  DB_NAME: "comments"
-  # GAE mounts the Cloud SQL instance socket under /cloudsql/INSTANCE_CONNECTION_NAME
-  DB_SOCKET: "/cloudsql/YOUR_PROJECT_ID:YOUR_REGION:YOUR_INSTANCE_NAME"
-  GCS_BUCKET_NAME: "YOUR_GCS_BUCKET_NAME"
