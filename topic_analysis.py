@@ -13,8 +13,6 @@ import tempfile
 from google.cloud import storage
 
 
-
-
 def analyze_file(file_path):
     print(f"Analyzing file: {file_path}")
     
@@ -115,7 +113,7 @@ def analyze_file(file_path):
     
 
     #New File Generation
-    file_name = 'generated_files/sentiment_analysis.xlsx'
+    file_name = 'sentiment_analysis.xlsx'
     df.to_excel(file_name, index=False)
     # Calculate the value counts for each identified topic
     sentiment_counts = df['Sentiment'].value_counts()
@@ -130,7 +128,7 @@ def analyze_file(file_path):
     plt.tight_layout()
     
     # Save the plot
-    chart_path = 'charts/sentiment_chart.png'
+    chart_path = 'sentiment_chart.png'
     if os.path.exists(chart_path):
         os.remove(chart_path)
     plt.savefig(chart_path)
@@ -139,6 +137,9 @@ def analyze_file(file_path):
 
     # Return the processed dataframe
     return data
+
+
+
 
 if __name__ == "__main__":
     # Default behavior if run directly
