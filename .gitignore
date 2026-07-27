@@ -5,6 +5,7 @@
 __pycache__/
 *.pyc
 *.pyo
+app.yaml
 
 # Virtual environments
 .venv/
