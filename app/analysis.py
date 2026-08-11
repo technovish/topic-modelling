@@ -12,6 +12,7 @@ from transformers import pipeline
 import tempfile
 from google.cloud import storage
 
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 def analyze_file(file_path):
     print(f"Analyzing file: {file_path}")
@@ -59,8 +60,7 @@ def analyze_file(file_path):
             except Exception as cleanup_err:
                 print(f"Error cleaning up temp file {temp_local_path}: {cleanup_err}")
 
-
-    # Extract comments, drop NaN values, convert to string, and flatten the list of lists
+    # Extract comments, drop NaN values, convert to string
     raw_comments = data['Customer Feedback Filtered'].dropna().astype(str).tolist()
     customer_comments = [comment for sublist in raw_comments for comment in (sublist if isinstance(sublist, list) else [sublist])] if any(isinstance(x, list) for x in raw_comments) else raw_comments
     # Ensure all comments are strings
@@ -88,17 +88,15 @@ def analyze_file(file_path):
             elif score >= 0.7:
                 return 'POSITIVE'
             else:
-                # For positive sentiment with lower confidence, might be neutral or mixed
-                return 'NEUTRAL' # Defaulting to POSITIVE for now
+                return 'NEUTRAL'
         elif label == 'NEGATIVE':
             if score >= 0.95:
                 return 'STRONG_NEGATIVE'
             elif score >= 0.7:
                 return 'NEGATIVE'
             else:
-                # For negative sentiment with lower confidence
-                return 'NEGATIVE' # Defaulting to NEGATIVE for now
-        return 'NEUTRAL' # Fallback for unexpected labels or very low scores
+                return 'NEGATIVE'
+        return 'NEUTRAL'
 
     # Apply sentiment analysis to the customer comments
     print("Analyzing sentiment for customer comments...")
@@ -111,24 +109,30 @@ def analyze_file(file_path):
     print("\nSentiment distribution:")
     print(df['Sentiment'].value_counts())
     
+    # New File Generation in generated_files directory
+    generated_files_dir = os.path.join(BASE_DIR, 'generated_files')
+    os.makedirs(generated_files_dir, exist_ok=True)
+    excel_file_path = os.path.join(generated_files_dir, 'sentiment_analysis.xlsx')
+    df.to_excel(excel_file_path, index=False)
+    print(f"Excel file saved to {excel_file_path}")
 
-    #New File Generation
-    file_name = 'sentiment_analysis.xlsx'
-    df.to_excel(file_name, index=False)
     # Calculate the value counts for each identified topic
     sentiment_counts = df['Sentiment'].value_counts()
 
     # Create a bar chart
-    plt.figure(figsize=(12, 8)) # Increased size
-    sentiment_counts.plot(kind='bar', color='#3b82f6') # Added color
+    plt.figure(figsize=(12, 8))
+    sentiment_counts.plot(kind='bar', color='#3b82f6')
     plt.title('Distribution of Sentiments', fontsize=16)
     plt.xlabel('Sentiment', fontsize=12)
     plt.ylabel('Number of Comments', fontsize=12)
     plt.xticks(rotation=45, ha='right')
     plt.tight_layout()
     
-    # Save the plot
-    chart_path = 'sentiment_chart.png'
+    # Save the plot in charts directory
+    charts_dir = os.path.join(BASE_DIR, 'charts')
+    os.makedirs(charts_dir, exist_ok=True)
+    chart_path = os.path.join(charts_dir, 'sentiment_chart.png')
+    
     if os.path.exists(chart_path):
         os.remove(chart_path)
     plt.savefig(chart_path)
@@ -138,12 +142,9 @@ def analyze_file(file_path):
     # Return the processed dataframe
     return data
 
-
-
-
 if __name__ == "__main__":
     # Default behavior if run directly
-    default_path = 'data/tmo_comments.xlsx'
+    default_path = os.path.join(BASE_DIR, 'data', 'tmo_comments.xlsx')
     gcs_bucket_name = os.getenv('GCS_BUCKET_NAME')
     
     if gcs_bucket_name:
@@ -153,7 +154,6 @@ if __name__ == "__main__":
             bucket = storage_client.bucket(gcs_bucket_name)
             blobs = list(storage_client.list_blobs(bucket))
             if blobs:
-                # Sort blobs to find the newest updated/created file
                 blobs.sort(key=lambda x: x.updated or x.time_created, reverse=True)
                 default_path = blobs[0].name
                 print(f"Using latest uploaded GCS file: {default_path}")
@@ -162,8 +162,4 @@ if __name__ == "__main__":
         except Exception as e:
             print(f"Error checking GCS bucket: {e}. Falling back to local default path.")
             
-    # Check absolute path mostly for local dev environment consistency
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    full_path = os.path.join(base_dir, default_path)
-    
     analyze_file(default_path)

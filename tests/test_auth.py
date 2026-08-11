@@ -14,7 +14,7 @@ class TestLogin(unittest.TestCase):
         app.config['SECRET_KEY'] = 'test_secret'
         self.client = app.test_client()
 
-    @patch('server.get_db_connection')
+    @patch('app.routes.get_db_connection')
     def test_login_success(self, mock_get_db):
         # Mock connection and cursor
         mock_conn = MagicMock()
@@ -42,7 +42,7 @@ class TestLogin(unittest.TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertTrue(response.location.endswith('/'))
 
-    @patch('server.get_db_connection')
+    @patch('app.routes.get_db_connection')
     def test_login_failure(self, mock_get_db):
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
@@ -65,7 +65,7 @@ class TestLogin(unittest.TestCase):
         self.assertEqual(response.status_code, 401)
         self.assertIn("Sign In Failed", response.data.decode())
         
-    @patch('server.get_db_connection')
+    @patch('app.routes.get_db_connection')
     def test_login_db_error(self, mock_get_db):
         mock_get_db.return_value = None
         
@@ -77,13 +77,13 @@ class TestLogin(unittest.TestCase):
         self.assertEqual(response.status_code, 500)
         self.assertIn("Database connection error", response.data.decode())
 
-    @patch('server.get_db_connection')
+    @patch('app.routes.get_db_connection')
     def test_register_get(self, mock_get_db):
         response = self.client.get('/register')
         self.assertEqual(response.status_code, 200)
         self.assertIn("Create an Account", response.data.decode())
 
-    @patch('server.get_db_connection')
+    @patch('app.routes.get_db_connection')
     def test_register_success(self, mock_get_db):
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
@@ -105,7 +105,7 @@ class TestLogin(unittest.TestCase):
         mock_cursor.execute.assert_any_call("SELECT id FROM users WHERE email = %s", ('newuser@intellize.com',))
         mock_conn.commit.assert_called_once()
 
-    @patch('server.get_db_connection')
+    @patch('app.routes.get_db_connection')
     def test_register_duplicate_email(self, mock_get_db):
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
@@ -124,7 +124,7 @@ class TestLogin(unittest.TestCase):
         self.assertEqual(response.status_code, 409)
         self.assertIn("A user with this email already exists", response.data.decode())
 
-    @patch('server.get_db_connection')
+    @patch('app.routes.get_db_connection')
     def test_register_passwords_mismatch(self, mock_get_db):
         response = self.client.post('/register', data={
             'email': 'newuser@intellize.com',
@@ -135,7 +135,7 @@ class TestLogin(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertIn("Passwords do not match", response.data.decode())
 
-    @patch('server.get_db_connection')
+    @patch('app.routes.get_db_connection')
     def test_register_password_too_short(self, mock_get_db):
         response = self.client.post('/register', data={
             'email': 'newuser@intellize.com',
@@ -146,7 +146,7 @@ class TestLogin(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertIn("Password must be at least 6 characters long", response.data.decode())
 
-    @patch('server.get_db_connection')
+    @patch('app.routes.get_db_connection')
     def test_register_invalid_email(self, mock_get_db):
         response = self.client.post('/register', data={
             'email': 'invalid-email',
@@ -157,20 +157,21 @@ class TestLogin(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertIn("Invalid email address format", response.data.decode())
 
-    @patch('server.mysql.connector.connect')
+    @patch('app.database.mysql.connector.connect')
     def test_get_db_connection_unix_socket(self, mock_connect):
-        import server
-        server.DB_SOCKET = '/cloudsql/test-instance'
+        import app.database as db
+        original_socket = db.DB_SOCKET
+        db.DB_SOCKET = '/cloudsql/test-instance'
         try:
-            server.get_db_connection()
+            db.get_db_connection()
             mock_connect.assert_called_once_with(
                 unix_socket='/cloudsql/test-instance',
-                user=server.DB_USER,
-                password=server.DB_PASSWORD,
-                database=server.DB_NAME
+                user=db.DB_USER,
+                password=db.DB_PASSWORD,
+                database=db.DB_NAME
             )
         finally:
-            server.DB_SOCKET = None
+            db.DB_SOCKET = original_socket
 
 if __name__ == '__main__':
     unittest.main()

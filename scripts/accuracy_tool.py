@@ -2,13 +2,14 @@ import argparse
 import pandas as pd
 import os
 import sys
-# Add current directory to path to allow import
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+# Add project root directory to path to allow import
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 try:
-    from topic_analysis import identify_topic_gemini, preprocess_text
+    from experimental.topic_analysis_gemini import identify_topic_gemini, preprocess_text
 except ImportError:
-    print("Error: Could not import topic_analysis. Make sure topic_analysis.py is in the same directory.")
+    print("Error: Could not import topic_analysis_gemini. Make sure experimental/topic_analysis_gemini.py exists.")
     sys.exit(1)
 
 def generate_golden_set(input_file, output_file, sample_size=20):
@@ -130,8 +131,6 @@ def evaluate_accuracy(labeled_file):
         # Metric 2: Partial/Soft Match (Token overlap)
         pred_tokens = set(pred.split())
         actual_tokens = set(actual.split())
-        # Jaccard like check: if any significant word overlaps? 
-        # Or subset check. "Billing" == "Billing Issue" -> Partial
         overlap = pred_tokens.intersection(actual_tokens)
         is_partial = len(overlap) > 0
         
