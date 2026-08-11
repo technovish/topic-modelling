@@ -5,6 +5,7 @@
 __pycache__/
 *.pyc
 *.pyo
+*.pyd
 
 # Virtual environments
 .venv/
@@ -12,5 +13,16 @@ venv/
 env/
 ENV/
 
-#oython files
+# Development / Connection Tests
+experimental/test_conn.py
 test_conn.py
+
+# Data and Outputs
+data/
+charts/
+generated_files/
+
+# IDE files
+.DS_Store
+.vscode/
+.idea/

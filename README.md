@@ -26,6 +26,52 @@ This is a web application that allows users to upload customer feedback data (in
 - **Data Manipulation:** Pandas
 - **Visualization:** Matplotlib
 
+## Project Structure
+
+```text
+topic-modelling/
+├── app/                          # Main Flask application package
+│   ├── __init__.py               # App factory (creates Flask app, configures blueprints/settings)
+│   ├── routes.py                 # Flask routes and blueprints (register, login, upload, results)
+│   ├── database.py               # Database connection helpers
+│   ├── analysis.py               # Core sentiment analysis module (pre-trained model pipeline)
+│   ├── templates/                # Jinja2 HTML templates
+│   │   ├── index.html
+│   │   ├── invalid.html
+│   │   ├── login.html
+│   │   ├── register.html
+│   │   └── results.html
+│   └── static/                   # Static assets folder
+│       ├── css/
+│       │   └── style.css
+│       ├── js/
+│       │   └── script.js
+│       └── images/
+│           └── background.jpg    # Asset folder (images, icons)
+├── charts/                       # Folder for generated sentiment charts
+├── data/                         # Folder for input datasets
+├── generated_files/              # Folder for processed Excel sheets
+├── scripts/                      # Utility and database admin scripts
+│   ├── setup_db.py
+│   ├── inspect_data.py
+│   └── accuracy_tool.py          # Sampler and evaluation accuracy tool
+├── tests/                        # Automated unit tests
+│   ├── __init__.py
+│   └── test_auth.py              # Authentication test suite
+├── experimental/                 # Older / alternative experimental files
+│   ├── test_conn.py              # Local/remote DB connection test script
+│   ├── topic_analysis_gemini.py  # Gemini API analysis pipeline copy
+│   └── topic_analysis_keras.py   # Keras pipeline copy
+├── .dockerignore
+├── .env
+├── .gitignore
+├── Dockerfile
+├── README.md
+├── requirements.txt
+├── server.py                     # Entrypoint script (creates and runs the app instance)
+└── test_upload.py                # Live integration/utility script
+```
+
 ## Installation
 
 1. **Clone the repository:**
@@ -68,7 +114,7 @@ This is a web application that allows users to upload customer feedback data (in
 5. **Initialize Database:**
    - Run the database setup script to create the user tables and seed a default user:
      ```bash
-     python setup_db.py
+     python -m scripts.setup_db
      ```
      *Note: This generates a default user with Email: `user@intellize.com`, Password: `intellize`.*
 
@@ -89,14 +135,14 @@ This is a web application that allows users to upload customer feedback data (in
 3. **Running Standalone Analysis:**
    - You can also run the analysis script directly via terminal:
      ```bash
-     python topic_analysis.py [optional_local_file_path]
+     python -m app.analysis [optional_local_file_path]
      ```
      If `GCS_BUCKET_NAME` is configured, it will check the bucket for the most recently uploaded file and analyze it.
 
 4. **Running Tests:**
    - Run the unit tests to verify the authentication and file upload logic:
      ```bash
-     python -m unittest login.py
+     python -m unittest tests/test_auth.py
      python -m unittest test_upload.py
      ```
 
